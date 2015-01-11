@@ -1,0 +1,138 @@
+<?php
+class AutoImagePages extends WireData implements Module, ConfigurableModule {
+
+    /**
+     * Data as used by the get/set functions
+     *
+     */
+    protected $data = array();
+
+
+   /**
+     * Default configuration for module
+     *
+     */
+    static public function getDefaultData() {
+            return array(
+                "templateAlbum" => "album",
+                "templateImage" => "image",
+                "fieldImages" => "images",
+                "fieldImage" => "image",
+            );
+    }
+
+    /**
+     * getModuleInfo is a module required by all modules to tell ProcessWire about them
+     *
+     * @return array
+     *
+     */
+    public static function getModuleInfo() {
+        return array(
+            'title' => __('Auto Image Pages'),
+            'version' => 5,
+            'author' => 'Adrian Jones',
+            'summary' => __('Automatically creates pages for all images uploaded to an album page.'),
+            'singular' => true,
+            'autoload' => true
+        );
+    }
+
+
+    /**
+     * Populate the default config data
+     *
+     */
+    public function __construct() {
+       foreach(self::getDefaultData() as $key => $value) {
+               $this->$key = $value;
+       }
+    }
+    /**
+     * Init function and createImagePages
+     *
+     */
+    public function init() {
+        $this->pages->addHookAfter('save', $this, 'createImagePages');
+    }
+
+    public function createImagePages($event){
+
+        $page = $event->arguments[0];
+        if($page->template == $this->$data['templateAlbum'] && count($page->$this->$data['fieldImages'])>0){
+            foreach($page->$this->$data['fieldImages'] as $image){
+                ////check if a image with the same filename exists
+                //if($this->pages->get("name={$image->name}")) {
+                //    //send error message for double entries
+                //    $this->error("double entry - image with the same filename exists!");
+                //} else {
+                    if($this->pages->get("parent={$page->name}, name={$image->basename}")->id) continue;
+                    $np = new Page();
+                    $np->of(false);
+                    $np->template = $this->templates->get($this->$data['templateImage']);
+                    $np->title = $image->description ? $image->description : $image->basename;
+                    $np->name = $image->basename;
+                    $np->parent = $page;
+                    $np->save();
+                    $np->$this->$data['fieldImage']->add($image->filename);
+                    $np->$this->$data['fieldImage']->last()->description = $image->description;
+                    $np->save();
+                //}
+            }
+            // delete all images from main album page
+            $page->$this->$data['fieldImages']->deleteAll();
+            $page->save();
+        }
+    }
+
+    /**
+     * Return an InputfieldsWrapper of Inputfields used to configure the class
+     *
+     * @param array $data Array of config values indexed by field name
+     * @return InputfieldsWrapper
+     *
+     */
+    public static function getModuleConfigInputfields(array $data) {
+
+        $data = array_merge(self::getDefaultData(), $data);
+
+        $wrapper = new InputFieldWrapper();
+
+        $f = wire('modules')->get('InputfieldText');
+        $f->attr('name+id', 'templateAlbum');
+        $f->label = __('Album template name', __FILE__);
+        $f->columnWidth = 50;
+        $f->description = __('The name of the template file of the album page', __FILE__);
+        $f->attr('title', __('Root Parent Image', __FILE__));
+        if(isset($data['templateAlbum'])) $f->value = $data['templateAlbum'];
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldText');
+        $f->attr('name+id', 'templateImage');
+        $f->label = __('Image template name', __FILE__);
+        $f->columnWidth = 50;
+        $f->description = __('The name of the template file of the single image page.', __FILE__);
+        $f->attr('title', __('Name of the image template', __FILE__));
+        if(isset($data['templateImage'])) $f->value = $data['templateImage'];
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldText');
+        $f->attr('name+id', 'fieldImages');
+        $f->label = __('Images field name', __FILE__);
+        $f->columnWidth = 50;
+        $f->description = __('The name of the images field that uploaded on the album page.', __FILE__);
+        $f->attr('title', __('Name of the images field', __FILE__));
+        if(isset($data['fieldImages'])) $f->value = $data['fieldImages'];
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldText');
+        $f->attr('name+id', 'fieldImage');
+        $f->label = __('Image field name', __FILE__);
+        $f->columnWidth = 50;
+        $f->description = __('The name of the image field of the single image pages.', __FILE__);
+        $f->attr('title', __('Name of the image field', __FILE__));
+        if(isset($data['fieldImage'])) $f->value = $data['fieldImage'];
+        $wrapper->add($f);
+        return $wrapper;
+    }
+}
