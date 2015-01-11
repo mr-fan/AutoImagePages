@@ -61,11 +61,11 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
         $page = $event->arguments[0];
         if($page->template == $this->$data['templateAlbum'] && count($page->$this->$data['fieldImages'])>0){
             foreach($page->$this->$data['fieldImages'] as $image){
-                ////check if a image with the same filename exists
-                //if($this->pages->get("name={$image->name}")) {
-                //    //send error message for double entries
-                //    $this->error("double entry - image with the same filename exists!");
-                //} else {
+                //check if a image with the same filename exists
+                if($this->pages->get("name={$image->name}")) {
+                    //send error message for double entries
+                    $this->error("double entry - image with the same filename exists!");
+                } else {
                     if($this->pages->get("parent={$page->name}, name={$image->basename}")->id) continue;
                     $np = new Page();
                     $np->of(false);
@@ -77,7 +77,7 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
                     $np->$this->$data['fieldImage']->add($image->filename);
                     $np->$this->$data['fieldImage']->last()->description = $image->description;
                     $np->save();
-                //}
+                }
             }
             // delete all images from main album page
             $page->$this->$data['fieldImages']->deleteAll();
