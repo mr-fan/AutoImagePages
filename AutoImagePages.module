@@ -30,7 +30,7 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
     public static function getModuleInfo() {
         return array(
             'title' => __('Auto Image Pages'),
-            'version' => 5,
+            'version' => 6,
             'author' => 'Adrian Jones',
             'summary' => __('Automatically creates pages for all images uploaded to an album page.'),
             'singular' => true,
@@ -59,28 +59,27 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
     public function createImagePages($event){
 
         $page = $event->arguments[0];
-        if($page->template == $this->$data['templateAlbum'] && count($page->$this->$data['fieldImages'])>0){
-            foreach($page->$this->$data['fieldImages'] as $image){
+        if($page->template == $this->data['templateAlbum'] && count($page->{$this->data['fieldImages']})>0){
+            foreach($page->{$this->data['fieldImages']} as $image){
                 //check if a image with the same filename exists
-                if($this->pages->get("name={$image->name}")) {
+                if($page->get("name={$image->basename}")->id) {
                     //send error message for double entries
-                    $this->error("double entry - image with the same filename exists!");
+                    $this->error($image->basename . " - image with the same filename already exists, so this was skipped!");
                 } else {
-                    if($this->pages->get("parent={$page->name}, name={$image->basename}")->id) continue;
                     $np = new Page();
                     $np->of(false);
-                    $np->template = $this->templates->get($this->$data['templateImage']);
+                    $np->template = $this->templates->get($this->data['templateImage']);
                     $np->title = $image->description ? $image->description : $image->basename;
                     $np->name = $image->basename;
                     $np->parent = $page;
                     $np->save();
-                    $np->$this->$data['fieldImage']->add($image->filename);
-                    $np->$this->$data['fieldImage']->last()->description = $image->description;
+                    $np->{$this->data['fieldImage']}->add($image->filename);
+                    $np->{$this->data['fieldImage']}->last()->description = $image->description;
                     $np->save();
                 }
             }
             // delete all images from main album page
-            $page->$this->$data['fieldImages']->deleteAll();
+            $page->{$this->data['fieldImages']}->deleteAll();
             $page->save();
         }
     }
@@ -98,39 +97,53 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
 
         $wrapper = new InputFieldWrapper();
 
-        $f = wire('modules')->get('InputfieldText');
+        $f = wire('modules')->get('InputfieldSelect');
         $f->attr('name+id', 'templateAlbum');
         $f->label = __('Album template name', __FILE__);
         $f->columnWidth = 50;
         $f->description = __('The name of the template file of the album page', __FILE__);
         $f->attr('title', __('Root Parent Image', __FILE__));
+        foreach(wire('templates') as $templateoption) {
+            $f->addOption($templateoption->name);
+        }
         if(isset($data['templateAlbum'])) $f->value = $data['templateAlbum'];
         $wrapper->add($f);
 
-        $f = wire('modules')->get('InputfieldText');
+        $f = wire('modules')->get('InputfieldSelect');
         $f->attr('name+id', 'templateImage');
         $f->label = __('Image template name', __FILE__);
         $f->columnWidth = 50;
         $f->description = __('The name of the template file of the single image page.', __FILE__);
         $f->attr('title', __('Name of the image template', __FILE__));
+        foreach(wire('templates') as $templateoption) {
+            $f->addOption($templateoption->name);
+        }
         if(isset($data['templateImage'])) $f->value = $data['templateImage'];
         $wrapper->add($f);
 
-        $f = wire('modules')->get('InputfieldText');
+        $f = wire('modules')->get('InputfieldSelect');
         $f->attr('name+id', 'fieldImages');
         $f->label = __('Images field name', __FILE__);
         $f->columnWidth = 50;
         $f->description = __('The name of the images field that uploaded on the album page.', __FILE__);
         $f->attr('title', __('Name of the images field', __FILE__));
+        foreach(wire('fields') as $fieldoption) {
+            // filter out incompatible field types
+            if($fieldoption->type == "FieldtypeImage")  $f->addOption($fieldoption->name);
+        }
         if(isset($data['fieldImages'])) $f->value = $data['fieldImages'];
         $wrapper->add($f);
 
-        $f = wire('modules')->get('InputfieldText');
+        $f = wire('modules')->get('InputfieldSelect');
         $f->attr('name+id', 'fieldImage');
         $f->label = __('Image field name', __FILE__);
         $f->columnWidth = 50;
         $f->description = __('The name of the image field of the single image pages.', __FILE__);
         $f->attr('title', __('Name of the image field', __FILE__));
+        foreach(wire('fields') as $fieldoption) {
+            // filter out incompatible field types
+            if($fieldoption->type == "FieldtypeImage")  $f->addOption($fieldoption->name);
+        }
         if(isset($data['fieldImage'])) $f->value = $data['fieldImage'];
         $wrapper->add($f);
         return $wrapper;
