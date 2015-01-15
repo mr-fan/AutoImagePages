@@ -1,3 +1,4 @@
+```php
 <?php
 class AutoImagePages extends WireData implements Module, ConfigurableModule {
 
@@ -62,7 +63,7 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
         if($page->template == $this->data['templateAlbum'] && count($page->{$this->data['fieldImages']})>0){
             foreach($page->{$this->data['fieldImages']} as $image){
                 //check if a image with the same filename exists
-                if($page->get("name={$image->basename}")->id) {
+                if(wire('pages')->get("name={$image->basename}")->id) {
                     //send error message for double entries
                     $this->error($image->basename . " - image with the same filename already exists, so this was skipped!");
                 } else {
@@ -76,6 +77,7 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
                     $np->{$this->data['fieldImage']}->add($image->filename);
                     $np->{$this->data['fieldImage']}->last()->description = $image->description;
                     $np->save();
+                    $this->message($image->basename . " - was uploaded!");
                 }
             }
             // delete all images from main album page
@@ -149,3 +151,4 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
         return $wrapper;
     }
 }
+```
