@@ -1,4 +1,3 @@
-```php
 <?php
 class AutoImagePages extends WireData implements Module, ConfigurableModule {
 
@@ -151,4 +150,3 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
         return $wrapper;
     }
 }
-```
