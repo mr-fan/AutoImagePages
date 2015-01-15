@@ -2,7 +2,7 @@
 Autogenerate Imagepages from a Albumpage
 
 ##What?
-Use a Imagefield for multiple images for the upload and save single images as subpages
+Use a Imagefield with multiple images for the upload and save single images as subpages of the page like in a folder gallery!
 
 ##Why?
 You wanna the benefits from the usage of one page for one image, but single upload sucks....
