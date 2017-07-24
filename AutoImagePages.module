@@ -30,7 +30,7 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
     public static function getModuleInfo() {
         return array(
             'title' => __('Auto Image Pages'),
-            'version' => 6,
+            'version' => 7,
             'author' => 'Adrian Jones',
             'summary' => __('Automatically creates pages for all images uploaded to an album page.'),
             'singular' => true,
@@ -69,7 +69,7 @@ class AutoImagePages extends WireData implements Module, ConfigurableModule {
                     $np = new Page();
                     $np->of(false);
                     $np->template = $this->templates->get($this->data['templateImage']);
-                    $np->title = $image->description ? $image->description : $image->basename;
+                    $np->title = $image->description ? $image->description : ucfirst(str_replace('-', ' ', pathinfo($image->basename, PATHINFO_FILENAME)));
                     $np->name = $image->basename;
                     $np->parent = $page;
                     $np->save();
